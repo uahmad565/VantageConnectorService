@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Fragment>
+		<UI Id="InputDlgUI">
+			<Dialog Id="InputDlg" Height="200" Width="300" Title="Registration form">
+				<Control Id="headerText" Type="Text" Height="50" Width="400" X="0" Y="0" TabSkip="no" />
+				<Control Id="RegistMsg" Type="Text" X="20" Y="25" Width="250" Height="80" Transparent="yes" Text="{TahomaInfo} Add an email and a password"/>
+				<Control Id="nameLabel" Type="Text" X="20" Y="65" Height="17" Width="65" Transparent="yes" Text="E-mail:" />
+				<Control Id="emailTextbox" Type="Edit" X="80" Y="65"  Height="17" Width="140" Property="EMAIL"  />
+				<Control Id="emailLabel" Type="Text" X="20" Y="85" Height="17" Width="65" Transparent="yes" Text="Password:" />
+				<Control Id="passwordTextbox" Type="Edit" X="80" Y="85"  Height="17" Width="140" Property="PASSWORD"  />
+				<Control Id="InstallBtn" Type="PushButton" Text="Install" Height ="25" Width="60" X="160" Y="130">
+					<Publish Event="DoAction" Value="CustomActions">1</Publish>
+					<Publish Event="EndDialog" Value="Return">1</Publish>
+				</Control>
+				<Control Id="CancelBtn" Type="PushButton" Text="Cancel" Height ="25" Width="60" X="80"  Y="130" Cancel ="yes">
+					<Publish Event="EndDialog" Value="Exit" />
+				</Control>
+			</Dialog>
+		</UI>
+		<InstallUISequence>
+			<Show Dialog="InputDlg" After="SetupDlg" />
+		</InstallUISequence>
+	</Fragment>
+	<Fragment>
+		<Binary Id="CustomActionBinary" SourceFile="$(var.CustomActions.TargetDir)$(var.CustomActions.TargetName).CA.dll"/>
+		<CustomAction Id="CustomActions" BinaryKey="CustomActionBinary" DllEntry="SaveUserInput"  />
+	</Fragment>
+</Wix>
