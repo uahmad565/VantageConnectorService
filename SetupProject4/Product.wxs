@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 	<Product Id="*" Name="SetupProject4" Language="1033" Version="1.0.0.0" Manufacturer="Usman" UpgradeCode="775acb5d-fc94-48a4-acec-769487936fb3">
-		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64"/>
 
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
 		<MediaTemplate />
@@ -24,7 +24,7 @@
 
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
-			<Directory Id="ProgramFilesFolder">
+			<Directory Id="ProgramFiles64Folder">
 				<Directory Id="MY_INSTALL_LOCATION" Name="SetupProject4" />
 			</Directory>
 		</Directory>
@@ -32,8 +32,37 @@
 
 	<Fragment>
 		<ComponentGroup Id="ProductComponents" Directory="MY_INSTALL_LOCATION">
-			<Component Id="myapplicationExe" Guid="*">
+			<!--<Component Id="myapplicationExe" Guid="*">
 				<File  Source="C:\Users\administrator\source\repos\VantageConnectorService\VantageConnectorService\bin\Debug\net6.0\VantageConnectorService.dll" KeyPath="yes" Checksum="yes"/>
+			</Component>-->
+
+			<Component Id="ServiceExecutable" Win64="yes">
+
+				<!-- Copies the App.WindowsService.exe file using the
+                     project reference preprocessor variables -->
+				<File Id="App.WindowsService.exe"
+                      Source="C:\TempUsman\VantageConnectorService.exe"
+                      KeyPath="yes" />
+
+				<!-- Remove all files from the INSTALLFOLDER on uninstall -->
+				<RemoveFile Id="ALLFILES" Name="*.*" On="both" />
+
+				<!-- Tell WiX to install the Service -->
+				<ServiceInstall Id="ServiceInstaller"
+                                Type="ownProcess"
+                                Name="Heartbeat"
+                                DisplayName="Heartbeat a"
+                                Description="A joke service that periodically logs nerdy humor."
+                                Start="auto"
+                                ErrorControl="normal" />
+
+				<!-- Tell WiX to start the Service -->
+				<ServiceControl Id="StartService"
+                                Start="install"
+                                Stop="both"
+                                Remove="uninstall"
+                                Name="Heartbeat"
+                                Wait="yes" />
 			</Component>
 		</ComponentGroup>
 	</Fragment>
