@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 	<Fragment>
-		<UI Id="InputDlgUI">
-			<Dialog Id="InputDlg" Height="200" Width="300" Title="Registration form">
+		<UI>
+			<Dialog Id="MyCustomPropertiesDlg" Height="200" Width="300" Title="Registration form">
 				<Control Id="headerText" Type="Text" Height="50" Width="400" X="0" Y="0" TabSkip="no" />
 				<Control Id="RegistMsg" Type="Text" X="20" Y="25" Width="250" Height="80" Transparent="yes" Text="{TahomaInfo} Add an email and a password"/>
 				<Control Id="nameLabel" Type="Text" X="20" Y="65" Height="17" Width="65" Transparent="yes" Text="E-mail:" />
@@ -18,9 +18,6 @@
 				</Control>
 			</Dialog>
 		</UI>
-		<InstallUISequence>
-			<Show Dialog="InputDlg" After="SetupDlg" />
-		</InstallUISequence>
 	</Fragment>
 	<Fragment>
 		<Binary Id="CustomActionBinary" SourceFile="$(var.CustomActions.TargetDir)$(var.CustomActions.TargetName).CA.dll"/>

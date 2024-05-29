@@ -21,7 +21,6 @@
   <ItemGroup>
     <Compile Include="InputDlg.wxs" />
     <Compile Include="Product.wxs" />
-    <Compile Include="SetupDlg.wxs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CustomActions\CustomActions.csproj">
