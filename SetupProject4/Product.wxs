@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="*" Name="VantageConnector" Language="1033" Version="1.0.0.0" Manufacturer="Usman" UpgradeCode="775acb5d-fc94-48a4-acec-769487936fb3">
+	<!--Give next version: only the first three fields is important-->
+	<Product Id="*" Name="VantageConnector" Language="1033" Version="1.0.0.1" Manufacturer="Usman" UpgradeCode="775acb5d-fc94-48a4-acec-769487936fb3">
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64"/>
 
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -29,7 +30,7 @@
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFiles64Folder">
-				<Directory Id="MY_INSTALL_LOCATION" Name="SetupProject4" />
+				<Directory Id="MY_INSTALL_LOCATION" Name="Vantage Connector" />
 			</Directory>
 		</Directory>
 	</Fragment>
@@ -54,9 +55,9 @@
 				<!-- Tell WiX to install the Service -->
 				<ServiceInstall Id="ServiceInstaller"
                                 Type="ownProcess"
-                                Name="Heartbeat"
-                                DisplayName="Heartbeat a"
-                                Description="A joke service that periodically logs nerdy humor."
+                                Name="VantageService"
+                                DisplayName="Vantage Connector"
+                                Description="Sync Active Directory Objects on regular intervals."
                                 Start="auto"
                                 ErrorControl="normal" />
 
@@ -65,7 +66,7 @@
                                 Start="install"
                                 Stop="both"
                                 Remove="uninstall"
-                                Name="Heartbeat"
+                                Name="VantageService"
                                 Wait="yes" />
 			</Component>
 		</ComponentGroup>
