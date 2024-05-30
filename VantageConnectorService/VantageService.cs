@@ -7,11 +7,11 @@ using System.Timers;
 
 namespace VantageConnectorService
 {
-    internal class Heartbeat
+    internal class VantageService
     {
         private readonly System.Timers.Timer _timer;
 
-        public Heartbeat()
+        public VantageService()
         {
             _timer = new System.Timers.Timer(1000) { AutoReset = true };
             _timer.Elapsed += TimerElapsed;
