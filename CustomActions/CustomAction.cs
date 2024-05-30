@@ -44,7 +44,7 @@ namespace CustomActions
 
         private static void GetFile(Session session)
         {
-            var fileDialog = new WinForms.OpenFileDialog { Filter = "Text File (*.txt)|*.txt" };
+            var fileDialog = new WinForms.OpenFileDialog { Filter = "JSON Files (*.json)|*.json" };
             if (fileDialog.ShowDialog() == WinForms.DialogResult.OK)
             {
                 string appdataPath = "C:\\Users\\Caphyon";
