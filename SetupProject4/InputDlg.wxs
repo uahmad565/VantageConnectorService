@@ -2,18 +2,34 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 	<Fragment>
 		<UI>
-			<Dialog Id="MyCustomPropertiesDlg" Height="200" Width="300" Title="Registration form">
-				<Control Id="headerText" Type="Text" Height="50" Width="400" X="0" Y="0" TabSkip="no" />
-				<Control Id="RegistMsg" Type="Text" X="20" Y="25" Width="250" Height="80" Transparent="yes" Text="{TahomaInfo} Add an email and a password"/>
-				<Control Id="nameLabel" Type="Text" X="20" Y="65" Height="17" Width="65" Transparent="yes" Text="E-mail:" />
-				<Control Id="emailTextbox" Type="Edit" X="80" Y="65"  Height="17" Width="140" Property="EMAIL"  />
-				<Control Id="emailLabel" Type="Text" X="20" Y="85" Height="17" Width="65" Transparent="yes" Text="Password:" />
-				<Control Id="passwordTextbox" Type="Edit" X="80" Y="85"  Height="17" Width="140" Property="PASSWORD"  />
-				<Control Id="InstallBtn" Type="PushButton" Text="Install" Height ="25" Width="60" X="160" Y="130">
+			<Dialog Id="MyCustomPropertiesDlg" Width="370" Height="270" Title="Registration form">
+				<!--Header-->
+				<Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
+				<Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
+					<Text>{\WixUI_Font_Title}Configuration File</Text>
+				</Control>
+				<Control Id="Description" Type="Text" X="15" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes">
+					<Text>Select the configuration file for setting up AD Agent in your System</Text>
+				</Control>
+				<Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+				<!--Properties-->
+				<Control Id="pathLabel" Type="Text" X="30" Y="65" Height="17" Width="250" Transparent="yes" Text="Location of config file:" />
+				<Control Id="PathEdit" Type="PathEdit" X="30" Y="85" Height="17" Width="255" Property="FILEPATH" Disabled="yes" />
+				<Control Id="BrowseBtn" Type="PushButton" Text="&amp;Browse...&amp;"  Height="20" Width="45" X="290" Y="85">
 					<Publish Event="DoAction" Value="CustomActions">1</Publish>
+					<Publish Property="FILEPATH" Value="[FILEPATH]"><![CDATA[1]]></Publish>
+				</Control>
+				<!--Footer-->
+				<Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+				<Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="&amp;Back">
+					<Publish Event="NewDialog" Value="InstallDirDlg">1</Publish>
+				</Control>
+
+				<Control Id="InstallBtn" Type="PushButton" Text="Install" X="236" Y="243" Width="56" Height="17" Default="yes">
+					<!--<Publish Event="DoAction" Value="CustomActions">1</Publish>-->
 					<Publish Event="EndDialog" Value="Return">1</Publish>
 				</Control>
-				<Control Id="CancelBtn" Type="PushButton" Text="Cancel" Height ="25" Width="60" X="80"  Y="130" Cancel ="yes">
+				<Control Id="CancelBtn" Type="PushButton" Text="Cancel" X="304" Y="243" Width="56" Height="17" Cancel ="yes">
 					<Publish Event="EndDialog" Value="Exit" />
 				</Control>
 			</Dialog>
@@ -21,6 +37,7 @@
 	</Fragment>
 	<Fragment>
 		<Binary Id="CustomActionBinary" SourceFile="$(var.CustomActions.TargetDir)$(var.CustomActions.TargetName).CA.dll"/>
-		<CustomAction Id="CustomActions" BinaryKey="CustomActionBinary" DllEntry="SaveUserInput"  />
+		<CustomAction Id="CustomActions" BinaryKey="CustomActionBinary" DllEntry="OpenFileChooser"  />
+
 	</Fragment>
 </Wix>

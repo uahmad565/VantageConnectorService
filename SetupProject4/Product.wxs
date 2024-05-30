@@ -7,7 +7,7 @@
 		<MediaTemplate />
 		<!--MyProperties-->
 		<Property Id="WIXUI_INSTALLDIR" Value="MY_INSTALL_LOCATION" />
-
+		<Property Id="FILEPATH" Value="C:\"/>
 		<Feature Id="ProductFeature" Title="SetupProject4" Level="1">
 			<ComponentGroupRef Id="ProductComponents" />
 		</Feature>
