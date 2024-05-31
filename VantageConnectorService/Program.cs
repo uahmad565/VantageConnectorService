@@ -3,18 +3,18 @@ using VantageConnectorService;
 
 var exitCode = HostFactory.Run(x =>
 {
-    x.Service<Heartbeat>(s =>
+    x.Service<VantageService>(s =>
     {
-        s.ConstructUsing(heartbeat => new Heartbeat());
+        s.ConstructUsing(heartbeat => new VantageService());
         s.WhenStarted(Heartbeat => Heartbeat.Start());
         s.WhenStopped(Heartbeat => Heartbeat.Stop());
     });
 
     x.RunAsLocalSystem();
 
-    x.SetServiceName("Heartbeat");
-    x.SetDisplayName("Heartbeat a");
-    x.SetDescription("A joke service that periodically logs nerdy humor.");
+    x.SetServiceName("VantageService");
+    x.SetDisplayName("Vantage Connector");
+    x.SetDescription("Sync Active Directory Objects on regular intervals.");
 
 });
 
