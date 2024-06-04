@@ -23,6 +23,33 @@ namespace CustomActions
         }
 
         [CustomAction]
+        public static ActionResult CopyConfigFileToInstallDir(Session session)
+        {
+            try
+            {
+                string programDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                string targetFolder = Path.Combine(programDataFolder, "Vantage Connector");
+
+                if(Directory.Exists(targetFolder))
+                {
+                    Directory.Delete(targetFolder, true);
+                }    
+                Directory.CreateDirectory(targetFolder);
+                var sourcePath = session["FILEPATH"];
+                FileInfo sourceFile = new FileInfo(sourcePath);
+                string destinationFilePath = Path.Combine(targetFolder, sourceFile.Name);
+                sourceFile.CopyTo(destinationFilePath, true); // Set the second argument to true to overwrite if needed
+                session.Log("Copied Vantage Config File");
+            }
+            catch (Exception ex)
+            {
+                session.Log("Exception occurred as Message: {0}\r\n StackTrace: {1}", ex.Message, ex.StackTrace);
+                return ActionResult.Failure;
+            }
+            return ActionResult.Success;
+        }
+
+        [CustomAction]
         public static ActionResult OpenFileChooser(Session session)
         {
             try
@@ -50,7 +77,7 @@ namespace CustomActions
                 string appdataPath = "C:\\Users\\Caphyon";
                 if (!System.IO.Directory.Exists(appdataPath + "\\UserData"))
                     System.IO.Directory.CreateDirectory(appdataPath + "\\UserData");
-                System.IO.File.WriteAllText(appdataPath + "\\UserData\\InputInfo.txt", "FilePath: " + fileDialog.FileName);
+                System.IO.File.WriteAllText(appdataPath + "\\UserData\\InputInfo.txt", "FilePath: " + session["INSTALLDIR"] + " ^ " + session["MY_INSTALL_LOCATION"]);
 
                 session["FILEPATH"] = fileDialog.FileName;
             }
