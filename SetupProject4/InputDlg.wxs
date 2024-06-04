@@ -26,7 +26,7 @@
 				</Control>
 
 				<Control Id="InstallBtn" Type="PushButton" Text="Install" X="236" Y="243" Width="56" Height="17" Default="yes">
-					<!--<Publish Event="DoAction" Value="CustomActions">1</Publish>-->
+					<Publish Event="DoAction" Value="CustomActions1">1</Publish>
 					<Condition Action="disable"><![CDATA[FILEPATH = "C:\"]]></Condition>
 					<Condition Action="enable"><![CDATA[FILEPATH <> "C:\"]]></Condition>
 					<Publish Event="EndDialog" Value="Return">1</Publish>
@@ -38,8 +38,11 @@
 		</UI>
 	</Fragment>
 	<Fragment>
+		<!--method-->
 		<Binary Id="CustomActionBinary" SourceFile="$(var.CustomActions.TargetDir)$(var.CustomActions.TargetName).CA.dll"/>
 		<CustomAction Id="CustomActions" BinaryKey="CustomActionBinary" DllEntry="OpenFileChooser"  />
-
+		<!--method-->
+		<Binary Id="CustomBinary1" SourceFile="$(var.CustomActions.TargetDir)$(var.CustomActions.TargetName).CA.dll"/>
+		<CustomAction Id="CustomActions1" BinaryKey="CustomBinary1" DllEntry="CopyConfigFileToInstallDir"/>
 	</Fragment>
 </Wix>
