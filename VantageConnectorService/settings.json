@@ -1,0 +1,54 @@
+﻿[
+  {
+    "data": {
+      "domainUserName": "administrator",
+      "syncHours": 0,
+      "configFromServer": true,
+      "password": "webdir123R",
+      "domainController": "Active Directory",
+      "syncMinutes": 0,
+      "port": 389,
+      "syncFrequency": "Daily",
+      "domainName": "usman.local",
+      "dataType": [
+        "user",
+        "group",
+        "ou"
+      ],
+      "settingGettingInterval": 0
+    },
+    "name": "SyncSettings",
+    "uuid": "6c9bb0bd-16dd-4c80-a65f-d845b4e505e1"
+  },
+  {
+    "data": {
+      "dataType": [
+        "user",
+        "group"
+      ]
+    },
+    "name": "SyncData",
+    "uuid": "c723bacb-f0fa-4fdf-a7a4-3789887ccdce"
+  },
+  {
+    "data": {
+      "dataType": [
+        "user",
+        "group",
+        "ou"
+      ]
+    },
+    "name": "SyncAllData",
+    "uuid": "7cd496a8-435a-4f14-937d-c6f9bfac49e8"
+  },
+  {
+    "data": {},
+    "name": "StopAgent",
+    "uuid": "7cd496a8-435a-4f14-937d-c6f9bfac49e8"
+  },
+  {
+    "data": {},
+    "name": "UploadADConnectorDebugLogFile",
+    "uuid": "7cd496a8-937d-435a-4f14-c6f9bfac49e8"
+  }
+]

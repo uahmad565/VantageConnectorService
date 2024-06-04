@@ -1,6 +1,27 @@
-﻿using Topshelf;
+﻿using ActiveDirectorySearcher.DTOs;
+using Newtonsoft.Json;
+using System.Net.Http.Headers;
+using Topshelf;
 using VantageConnectorService;
+using VantageConnectorService.DTOs;
+using VantageConnectorService.Factory;
 
+try
+{
+    VantageConfig config = VantageConfigFactory.Create();
+
+    ServiceClient service = new ServiceClient(config);
+    Setting[] setting = service.DummySettings();
+    ADSync syncObj = ADSyncFactory.Create(setting[0].data, config);
+    syncObj.OnStart();
+}
+catch(Exception ex)
+{
+    Console.WriteLine(ex.Message);
+}
+
+
+/*
 var exitCode = HostFactory.Run(x =>
 {
     x.Service<VantageService>(s =>
@@ -20,3 +41,4 @@ var exitCode = HostFactory.Run(x =>
 
 int exitCodeValue = (int)Convert.ChangeType(exitCode, exitCode.GetTypeCode());
 Environment.ExitCode = exitCodeValue;
+*/
