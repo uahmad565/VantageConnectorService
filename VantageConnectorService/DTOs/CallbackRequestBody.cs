@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+using System.Text.Json.Serialization;
 
 namespace VantageConnectorService.DTOs
 {
@@ -21,7 +18,10 @@ namespace VantageConnectorService.DTOs
     public class Commanddetail
     {
         public string uuid { get; set; }
+
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public CommandDetailType error { get; set; }
+        
         public string errorDescription { get; set; }
     }
 

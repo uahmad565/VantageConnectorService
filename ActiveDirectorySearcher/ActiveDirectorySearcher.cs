@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using ActiveDirectorySearcher.DTOs;
 using CommonUtils;
+using CommonUtils.GlobalObjects;
 using Newtonsoft.Json;
 
 namespace ActiveDirectorySearcher;
@@ -15,8 +16,7 @@ public class ActiveDirectoryHelper
 
     public static void LoadOUReplication()
     {
-        var basePath = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
-        var filePath = Path.Combine(basePath ?? "", "Info", "OUReplicationTime.txt");
+        var filePath = Path.Combine(GlobalFileHandler.InfoDirectory, GlobalFileHandler.OU_UserGroupsReplicationFileName);
 
         string fileJson = File.ReadAllText(filePath);
         if (!string.IsNullOrEmpty(fileJson))
@@ -27,13 +27,12 @@ public class ActiveDirectoryHelper
 
     public static async Task WriteOUReplication()
     {
-        var basePath = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
-        var filePath = Path.Combine(basePath ?? "", "Info", "OUReplicationTime.txt");
+        var filePath = Path.Combine(GlobalFileHandler.InfoDirectory, GlobalFileHandler.OU_UserGroupsReplicationFileName);
         var json = await SerializerHelper.GetSerializedObject(keyValuePairs);
         await File.WriteAllTextAsync(filePath, json);
     }
 
-    public static async Task ProcessADObjects(InputCreds inputCreds, IProgress<Status>? progress, ObjectType objectType, ICollection<string> containers, CancellationToken cancellationToken)
+    public static async Task ProcessADObjects(InputCreds inputCreds, IProgress<Status>? progress, ObjectType objectType, ICollection<string> containers, int recordsToSyncInSingleRequest, CancellationToken cancellationToken)
     {
         if (containers.Count > 0)
         {
@@ -45,7 +44,7 @@ public class ActiveDirectoryHelper
                 if (keyValuePairs.ContainsKey($"{container}_{objectType}"))
                     lastReplicationTime = keyValuePairs[$"{container}_{objectType}"];
 
-                await ProcessADObjects(inputCreds, progress, objectType, cancellationToken, lastReplicationTime, container);
+                await ProcessADObjects(inputCreds, progress, objectType, cancellationToken, lastReplicationTime, recordsToSyncInSingleRequest, container);
                 keyValuePairs[$"{container}_{objectType}"] = currReplicationTime;
             }
         }
@@ -54,18 +53,18 @@ public class ActiveDirectoryHelper
             var basePath = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
             string filePath = objectType switch
             {
-                ObjectType.User => Path.Combine(basePath ?? "", "Info", "UserReplicationTime.txt"),
-                ObjectType.Group => Path.Combine(basePath ?? "", "Info", "GroupReplicationTime.txt"),
+                ObjectType.User => Path.Combine(basePath ?? "", "Info", GlobalFileHandler.UserReplicationFileName),
+                ObjectType.Group => Path.Combine(basePath ?? "", "Info", GlobalFileHandler.GroupReplicationFileName),
                 _ => ""
             };
             //*tobe Add Info folder if it doesn't exist
             var currReplicationTime = DateTime.Now.ToUniversalTime().ToString();
             var lastReplicationTime = await File.ReadAllTextAsync(filePath);
-            await ProcessADObjects(inputCreds, progress, objectType, cancellationToken, lastReplicationTime);
+            await ProcessADObjects(inputCreds, progress, objectType, cancellationToken, lastReplicationTime, recordsToSyncInSingleRequest);
             await File.WriteAllTextAsync(filePath, currReplicationTime, cancellationToken);
         }
     }
-    private static async Task ProcessADObjects(InputCreds inputCreds, IProgress<Status>? progress, ObjectType objectType, CancellationToken cancellationToken, string? lastReplicationTime, string ouPath = "")
+    private static async Task ProcessADObjects(InputCreds inputCreds, IProgress<Status>? progress, ObjectType objectType, CancellationToken cancellationToken, string? lastReplicationTime, int recordsToSyncInSingleRequest, string ouPath = "")
     {
         progress?.Report(new($"Processing {objectType} {ouPath}. {Environment.NewLine}", ""));
 
@@ -93,10 +92,10 @@ public class ActiveDirectoryHelper
                 var distinguishedName = result.Properties["distinguishedName"][0] as string ?? "";
                 dnList.Add(distinguishedName);
 
-                if ((i + 1) % 50 == 0)
+                if ((i + 1) % recordsToSyncInSingleRequest == 0)
                     ReportFetchObjects(objectType, dnList, i + 1, progress);
 
-                if ((i + 1) % 1000 == 0)
+                if ((i + 1) % recordsToSyncInSingleRequest == 0)
                     await SendObjectListToWebService(inputCreds.Host, inputCreds.DomainId, objectsList, objectType, progress, cancellationToken);
             }
             if (dnList.Count > 0)
@@ -137,6 +136,7 @@ public class ActiveDirectoryHelper
             _ => ""
         };
         using var client = new HttpClient();
+        client.Timeout = TimeSpan.FromMinutes(30);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         HttpResponseMessage response;

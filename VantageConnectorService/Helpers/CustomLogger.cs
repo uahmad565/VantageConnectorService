@@ -1,24 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 
 namespace VantageConnectorService.Helpers
 {
     public class CustomLogger
     {
+        private static object fileLock=new object();
         private readonly string filePath;
-        private readonly string header;
 
         public string FilePath => filePath;
 
-        public CustomLogger(string fileName, string header)
+        public CustomLogger(string fileName)
         {
             var basePath = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
 
             filePath = Path.Combine(basePath ?? "", "Logs", fileName);
-            this.header = header;
             Initialize();
         }
 
@@ -66,8 +61,11 @@ namespace VantageConnectorService.Helpers
 
         private void Write(string message, MessageType messageType)
         {
-            var formattedMessage = $"[{DateTime.Now:yyyy-MM-dd:HH:mm:ss.fff}] [{header}] [{messageType.ToString().ToUpper()}]: {message}{Environment.NewLine}";
-            File.AppendAllText(this.filePath, formattedMessage);
+            lock(fileLock)
+            {
+                var formattedMessage = $"[{DateTime.Now:yyyy-MM-dd:HH:mm:ss.fff}] [{messageType.ToString().ToUpper()}]: {message}{Environment.NewLine}";
+                File.AppendAllText(this.filePath, formattedMessage);
+            }
         }
 
         private enum MessageType

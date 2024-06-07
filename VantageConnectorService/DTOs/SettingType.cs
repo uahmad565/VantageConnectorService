@@ -12,6 +12,7 @@ namespace VantageConnectorService.DTOs
         SyncData,
         SyncAllData,
         StopAgent,
-        UploadADConnectorDebugLogFile
+        UploadADConnectorDebugLogFile,
+        SettingGettingInterval
     }
 }

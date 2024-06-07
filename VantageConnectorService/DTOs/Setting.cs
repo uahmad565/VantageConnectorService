@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
 namespace VantageConnectorService.DTOs
 {
@@ -16,6 +12,7 @@ namespace VantageConnectorService.DTOs
     public class Setting
     {
         public SettingData data { get; set; }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public SettingType name { get; set; }
         public string uuid { get; set; }
     }
@@ -25,6 +22,8 @@ namespace VantageConnectorService.DTOs
         public string domainName { get; set; }
         public string domainController { get; set; }
         public int port { get; set; }
+        public int recordsToSyncInSingleRequest { get; set; }
+        public double interval { get; set; } // minutes
         public bool configFromServer { get; set; }
         public string domainUserName { get; set; }
         public string password { get; set; }

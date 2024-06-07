@@ -1,128 +1,164 @@
 ﻿using ActiveDirectorySearcher.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
+using CommonUtils.GlobalObjects;
 using System.Timers;
 using VantageConnectorService.DTOs;
 using VantageConnectorService.Factory;
+using VantageConnectorService.GlobalObjects;
 
 namespace VantageConnectorService
 {
     internal class VantageService
     {
-        private readonly System.Timers.Timer _timer;
+        private bool _isTaskRunning = false;
+        private System.Timers.Timer _timer;
+        private CancellationTokenSource? _cancellationToken;
+        private ServiceClient _serviceClient;
+
         private VantageConfig _vantageConfig;
-        Dictionary<SettingType, bool> currentTasks = new Dictionary<SettingType, bool>()
-        {
-            {SettingType.SyncSettings,false },
-            {SettingType.SyncData,false },
-            {SettingType.SyncAllData,false },
-            {SettingType.StopAgent,false },
-            {SettingType.UploadADConnectorDebugLogFile,false }
-        };
+        private ADSync? _aDSync = null;
 
         public VantageService()
         {
-            _timer = new System.Timers.Timer(60000) { AutoReset = true };
-            _timer.Elapsed += TimerElapsed;
-        }
+            _cancellationToken = new();
+            _vantageConfig = VantageConfigFactory.Create();
+            _serviceClient = new ServiceClient(_vantageConfig);
+            GlobalLogManager.Initialize($"{_vantageConfig.domainId}_ADControllerDebugLog_{DateTime.Now.ToString("yyyyMMdd")}.log");
+            GlobalFileHandler.Initialize();
 
-        private async void TimerElapsed(object sender, ElapsedEventArgs e)
-        {
-            if (currentTasks[SettingType.SyncData] || currentTasks[SettingType.SyncAllData] || currentTasks[SettingType.StopAgent])
-                return;
-            ServiceClient serviceClient = new(_vantageConfig);
-            var settings = serviceClient.DummySettings();
-            if (settings.Length == 0)
-                return;
-            var currentSetting = settings[0];
-
-
-            switch (currentSetting.name)
-            {
-                case SettingType.SyncSettings:
-                    currentTasks[SettingType.SyncData] = true;
-                    //callback
-                    break;
-                case SettingType.SyncData:
-                    currentTasks[SettingType.SyncData] = true;
-                    if (currentTasks[SettingType.SyncSettings])
-                    {
-                        //stop Sync Setting
-                    }
-                    //one Time Sync
-                    //restart Sync Setting if currentTasks[SettingType.SyncSettings]
-                    currentTasks[SettingType.SyncData] = false;
-                    //callback
-                    break;
-                case SettingType.SyncAllData:
-                    currentTasks[SettingType.SyncAllData] = true;
-                    if (currentTasks[SettingType.SyncSettings])
-                    {
-                        //stop Sync Setting
-                    }
-                    //one Time Sync
-                    //restart Sync Setting if currentTasks[SettingType.SyncSettings]
-                    //callback
-                    break;
-                case SettingType.StopAgent: // Halt All tasks focus here
-                    //Halt Everything -> SyncSetting, SyncData, SyncAllData
-                    //callback
-                    break;
-                case SettingType.UploadADConnectorDebugLogFile:
-                    //Create new Task 
-                    await Task.Run(() => UploadADConnectoryLogFile());
-                    //callback
-                    break;
-            }
-
-            bool AnyTaskRunning(SettingType settingTypeList)
-            {
-                return false;
-            }
-            string[] lines = new string[] { DateTime.Now.ToString() };
-            System.IO.File.AppendAllLines(@"C:\TempUsman\abc.txt", lines);
         }
         public void Start()
         {
-            _vantageConfig = VantageConfigFactory.Create();
+            var settingInterval = GlobalFileHandler.ReadJSON<double>(GlobalFileHandler.SettingGettingInterval);
+            if (settingInterval == default)
+                settingInterval = GlobalDefault.DefaultSettingGettingInterval;//
+            _timer = new System.Timers.Timer(settingInterval * 60 * 1000) { AutoReset = true };
+            _timer.Elapsed += TimerElapsed;
             _timer.Start();
         }
         public void Stop()
         {
+            _aDSync?.OnStop();
+            _cancellationToken?.Cancel();
             _timer.Stop();
+            _timer.Dispose();
         }
 
+        private async void TimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            if (_isTaskRunning)
+            {
+                GlobalLogManager.Logger.WriteInfo("Vantage Service is already running, skipping this tick...");
+                return;
+            }
+            try
+            {
+                _isTaskRunning = true;
+                var settings = await _serviceClient.GetSettings();
+
+                //var settings = _serviceClient.DummySettings(); ;
+
+                if (settings.Length == 0)
+                {
+                    GlobalLogManager.Logger.WriteWarn("TimerElapsed do nothing. Setting Length 0 from getting setting service.");
+                    return;
+                }
+                var currentSetting = settings[0];
+
+                if ((currentSetting.name == SettingType.SyncData || currentSetting.name == SettingType.SyncAllData || currentSetting.name == SettingType.StopAgent) && _aDSync != null)
+                {
+                    _aDSync.OnStop();
+                }
+
+                try
+                {
+                    switch (currentSetting.name)
+                    {
+                        case SettingType.SyncSettings:
+                            {
+                                _aDSync?.OnStop();
+                                await GlobalFileHandler.WriteJSON<Setting>(currentSetting, GlobalFileHandler.SyncSettingFileName);
+                                _aDSync = ADSyncFactory.Create(currentSetting.data, _vantageConfig, false);
+                                _aDSync.OnStart();
+                                break;
+                            }
+                        case SettingType.SyncData:
+                            {
+                                var loadedSyncSetting = GlobalFileHandler.ReadJSON<Setting>(GlobalFileHandler.SyncSettingFileName);
+                                if (loadedSyncSetting == null) throw new Exception($"{GlobalFileHandler.SyncSettingFileName} should have SyncSetting to proceed {currentSetting.name}");
+                                using var immediateADSync = ADSyncFactory.Create(loadedSyncSetting.data, _vantageConfig, true);
+                                await immediateADSync.ProcessObjects();
+                                break;
+                            }
+                        case SettingType.SyncAllData:
+                            {
+                                var loadedSyncSetting = GlobalFileHandler.ReadJSON<Setting>(GlobalFileHandler.SyncSettingFileName);
+                                if (loadedSyncSetting == null) throw new Exception($"{GlobalFileHandler.SyncSettingFileName} should have SyncSetting to proceed {currentSetting.name}");
+                                GlobalFileHandler.EmptyAllReplicationFiles();
+                                using var immediateADSync = ADSyncFactory.Create(loadedSyncSetting.data, _vantageConfig, true);
+                                await immediateADSync.ProcessObjects();
+                                break;
+                            }
+                        case SettingType.StopAgent: // Halt All tasks focus here
+                            {
+                                Stop();
+                                break;
+                            }
+                        case SettingType.UploadADConnectorDebugLogFile:
+                            {
+                                await UploadADConnectoryLogFile();
+                                break;
+                            }
+                        case SettingType.SettingGettingInterval:
+                            {
+                                await GlobalFileHandler.WriteJSON<double>(currentSetting.data.interval, GlobalFileHandler.SettingGettingInterval);
+                                _timer.Interval = currentSetting.data.interval * 60 * 1000; //convert to minute
+                                break;
+                            }
+                    }
+                    await CallbackStatus(new Commanddetail { uuid = currentSetting.uuid, error = CommandDetailType.Success, errorDescription = currentSetting.name.ToString() + " Successful Operation." });
+                }
+                catch (Exception ex)
+                {
+                    await CallbackStatus(new Commanddetail { uuid = currentSetting.uuid, error = CommandDetailType.Failed, errorDescription = currentSetting.name.ToString() + " Failed Operation." });
+                    GlobalLogManager.Logger.WriteException(ex);
+                }
+
+                //resume if ADSync stopped for a while
+                if ((currentSetting.name == SettingType.SyncData || currentSetting.name == SettingType.SyncAllData) && _aDSync != null)
+                {
+                    var loadedSyncSetting = GlobalFileHandler.ReadJSON<Setting>(GlobalFileHandler.SyncSettingFileName);
+                    _aDSync = ADSyncFactory.Create(loadedSyncSetting.data, _vantageConfig, false);
+                }
+                //await _serviceClient.DummyDequeSettings(settings);
+            }
+            catch (Exception vantageTickException)
+            {
+                GlobalLogManager.Logger.WriteException(vantageTickException);
+            }
+            finally
+            {
+
+                _isTaskRunning = false;
+            }
+        }
+
+
         #region private methods
+        private async Task CallbackStatus(Commanddetail commandDetail)
+        {
+            CallbackRequestBody body = new CallbackRequestBody();
+            body.commandDetails = new Commanddetail[]
+            {
+                    commandDetail
+            };
+            body.commandUuids = new string[] {
+                    commandDetail.uuid
+                };
+            await _serviceClient.CallBackService(body);
+        }
         private async Task UploadADConnectoryLogFile()
         {
-            string filePath = @"C:\TempUsman\Info\92b02f3d-4da2-43ab-9efe-2187c24bff01_ADControllerDebugLog_20240509003935.log";  // Specify the path to your file
-            string url = "https://ns-server.vantagemdm.com/secure/upload/file";  // Your endpoint URL
-
-            using (var client = new HttpClient())
-            {
-                using (var content = new MultipartFormDataContent())
-                {
-                    byte[] fileBytes = await File.ReadAllBytesAsync(filePath);
-                    var fileContent = new ByteArrayContent(fileBytes);
-                    fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data");
-                    content.Add(fileContent, "file", Path.GetFileName(filePath));
-
-                    var response = await client.PostAsync(url, content);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        Console.WriteLine("File uploaded successfully.");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Failed to upload file. Status code: {response.StatusCode}");
-                    }
-                }
-            }
+            await _serviceClient.UploadLogFile(GlobalLogManager.FilePath, _cancellationToken.Token);
         }
         #endregion
     }
