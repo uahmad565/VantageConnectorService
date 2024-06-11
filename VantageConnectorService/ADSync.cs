@@ -2,7 +2,6 @@
 using ActiveDirectorySearcher.DTOs;
 using VantageConnectorService.DTOs;
 using VantageConnectorService.GlobalObjects;
-using VantageConnectorService.Helpers;
 
 namespace VantageConnectorService
 {
@@ -19,13 +18,13 @@ namespace VantageConnectorService
         private readonly List<ObjectType> _objectTypes;
         private readonly int _recordsToSyncInSingleRequest;
 
-        public ADSync(InputCreds inputCreds, List<string> containers, VantageInterval? interval, List<ObjectType> objectTypes,int recordsToSyncInSingleRequest)
+        public ADSync(InputCreds inputCreds, List<string> containers, VantageInterval? interval, List<ObjectType> objectTypes, int recordsToSyncInSingleRequest)
         {
             _cancellationToken = new();
             progressReporter = new Progress<Status>(st =>
             {
                 string message = st.LogMessage + (string.IsNullOrEmpty(st.ResultMessage) ? "" : (" Result: " + st.ResultMessage));
-                GlobalLogManager.Logger.WriteInfo(message);
+                GlobalLogManager.Logger.Info(message);
             });
 
             _inputCreds = inputCreds;
@@ -100,7 +99,7 @@ namespace VantageConnectorService
 
             if (_isTaskRunning)
             {
-                GlobalLogManager.Logger.WriteInfo("Replication Sync is already running, skipping this tick...");
+                GlobalLogManager.Logger.Info("Replication Sync is already running, skipping this tick...");
                 return;
             }
 
@@ -129,26 +128,27 @@ namespace VantageConnectorService
             {
                 if (_objectTypes.Contains(ObjectType.Group))
                 {
-                    GlobalLogManager.Logger.WriteInfo("Start Fetching Groups");
+                    GlobalLogManager.Logger.Info("Start Fetching Groups");
                     await ActiveDirectoryHelper.ProcessADObjects(_inputCreds, progressReporter, ObjectType.Group, _containers, _recordsToSyncInSingleRequest, _cancellationToken.Token);
                 }
                 if (_objectTypes.Contains(ObjectType.User))
                 {
-                    GlobalLogManager.Logger.WriteInfo("Start Fetching Users");
+                    GlobalLogManager.Logger.Info("Start Fetching Users");
                     await ActiveDirectoryHelper.ProcessADObjects(_inputCreds, progressReporter, ObjectType.User, _containers, _recordsToSyncInSingleRequest, _cancellationToken.Token);
                 }
                 if (_objectTypes.Contains(ObjectType.OU))
                 {
-
+                    GlobalLogManager.Logger.Info("Start Fetching OUs");
+                    await ActiveDirectoryHelper.ProcessADObjects(_inputCreds, progressReporter, ObjectType.OU, _containers, _recordsToSyncInSingleRequest, _cancellationToken.Token);
                 }
-                GlobalLogManager.Logger.WriteInfo("Finished Replication");
+                GlobalLogManager.Logger.Info("Finished Replication");
             });
         }
-        private async void HandleError(Exception ex)
+        private void HandleError(Exception ex)
         {
             try
             {
-                GlobalLogManager.Logger.WriteException(ex);
+                GlobalLogManager.Logger.Error(ex);
             }
             catch (Exception)
             {

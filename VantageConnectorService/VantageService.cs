@@ -1,4 +1,5 @@
 ﻿using ActiveDirectorySearcher.DTOs;
+using CommonUtils;
 using CommonUtils.GlobalObjects;
 using System.Timers;
 using VantageConnectorService.DTOs;
@@ -22,9 +23,7 @@ namespace VantageConnectorService
             _cancellationToken = new();
             _vantageConfig = VantageConfigFactory.Create();
             _serviceClient = new ServiceClient(_vantageConfig);
-            GlobalLogManager.Initialize($"{_vantageConfig.domainId}_ADControllerDebugLog_{DateTime.Now.ToString("yyyyMMdd")}.log");
             GlobalFileHandler.Initialize();
-
         }
         public void Start()
         {
@@ -43,26 +42,23 @@ namespace VantageConnectorService
             _timer.Dispose();
         }
 
-        private async void TimerElapsed(object sender, ElapsedEventArgs e)
+        private async void TimerElapsed(object? sender, ElapsedEventArgs e)
         {
             if (_isTaskRunning)
-            {
-                GlobalLogManager.Logger.WriteInfo("Vantage Service is already running, skipping this tick...");
                 return;
-            }
             try
             {
                 _isTaskRunning = true;
                 var settings = await _serviceClient.GetSettings();
-
                 //var settings = _serviceClient.DummySettings(); ;
 
                 if (settings.Length == 0)
                 {
-                    GlobalLogManager.Logger.WriteWarn("TimerElapsed do nothing. Setting Length 0 from getting setting service.");
+                    GlobalLogManager.Logger.Warn("Timer Elapsed do nothing. Setting Length 0 from getting setting service.");
                     return;
                 }
                 var currentSetting = settings[0];
+                GlobalLogManager.Logger.Info($"Going to fetch Setting for Vantage Service{Environment.NewLine}{await SerializerHelper.GetSerializedObject(currentSetting)}");
 
                 if ((currentSetting.name == SettingType.SyncData || currentSetting.name == SettingType.SyncAllData || currentSetting.name == SettingType.StopAgent) && _aDSync != null)
                 {
@@ -105,7 +101,7 @@ namespace VantageConnectorService
                             }
                         case SettingType.UploadADConnectorDebugLogFile:
                             {
-                                await UploadADConnectoryLogFile();
+                                await UploadADConnectoryLogFile(_vantageConfig.domainId);
                                 break;
                             }
                         case SettingType.SettingGettingInterval:
@@ -120,7 +116,7 @@ namespace VantageConnectorService
                 catch (Exception ex)
                 {
                     await CallbackStatus(new Commanddetail { uuid = currentSetting.uuid, error = CommandDetailType.Failed, errorDescription = currentSetting.name.ToString() + " Failed Operation." });
-                    GlobalLogManager.Logger.WriteException(ex);
+                    GlobalLogManager.Logger.Error(ex);
                 }
 
                 //resume if ADSync stopped for a while
@@ -133,7 +129,7 @@ namespace VantageConnectorService
             }
             catch (Exception vantageTickException)
             {
-                GlobalLogManager.Logger.WriteException(vantageTickException);
+                GlobalLogManager.Logger.Error(vantageTickException);
             }
             finally
             {
@@ -156,9 +152,9 @@ namespace VantageConnectorService
                 };
             await _serviceClient.CallBackService(body);
         }
-        private async Task UploadADConnectoryLogFile()
+        private async Task UploadADConnectoryLogFile(string domainId)
         {
-            await _serviceClient.UploadLogFile(GlobalLogManager.FilePath, _cancellationToken.Token);
+            await _serviceClient.UploadLogFile(GlobalLogManager.FilePath, domainId, _cancellationToken.Token);
         }
         #endregion
     }

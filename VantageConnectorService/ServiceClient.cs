@@ -87,7 +87,7 @@ namespace VantageConnectorService
             }
         }
 
-        public async Task UploadLogFile(string filePath, CancellationToken cancellationToken)
+        public async Task UploadLogFile(string filePath, string domainId, CancellationToken cancellationToken)
         {
             string url = $"{vantageConfig.host}/secure/upload/file";
 
@@ -98,7 +98,7 @@ namespace VantageConnectorService
                     byte[] fileBytes = await File.ReadAllBytesAsync(filePath);
                     var fileContent = new ByteArrayContent(fileBytes);
                     fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data");
-                    content.Add(fileContent, "file", Path.GetFileName(filePath));
+                    content.Add(fileContent, "file", $"{domainId}_ADControllerDebugLog_{DateTime.Now.ToString("yyyyMMddHHmmss")}.log");
 
                     var response = await client.PostAsync(url, content, cancellationToken);
 

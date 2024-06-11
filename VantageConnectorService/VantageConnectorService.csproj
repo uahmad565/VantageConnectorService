@@ -8,7 +8,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="VantageConnectorService.nlog" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="VantageConnectorService.nlog">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Topshelf" Version="4.3.0" />
+    <PackageReference Include="Topshelf.NLog" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>

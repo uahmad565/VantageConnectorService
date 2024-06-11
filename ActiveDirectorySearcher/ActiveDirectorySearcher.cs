@@ -50,11 +50,11 @@ public class ActiveDirectoryHelper
         }
         else
         {
-            var basePath = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
             string filePath = objectType switch
             {
-                ObjectType.User => Path.Combine(basePath ?? "", "Info", GlobalFileHandler.UserReplicationFileName),
-                ObjectType.Group => Path.Combine(basePath ?? "", "Info", GlobalFileHandler.GroupReplicationFileName),
+                ObjectType.User => Path.Combine(GlobalFileHandler.InfoDirectory, GlobalFileHandler.UserReplicationFileName),
+                ObjectType.Group => Path.Combine(GlobalFileHandler.InfoDirectory, GlobalFileHandler.GroupReplicationFileName),
+                ObjectType.OU => Path.Combine(GlobalFileHandler.InfoDirectory, GlobalFileHandler.OUReplicationFileName),
                 _ => ""
             };
             //*tobe Add Info folder if it doesn't exist

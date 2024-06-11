@@ -28,11 +28,12 @@ namespace VantageConnectorService.Factory
             {
                 if (Enum.TryParse(typeof(ObjectType), item, true, out var result))
                 {
-                    list.Add((ObjectType)result);
+                    if (result != null)
+                        list.Add((ObjectType)result);
                 }
                 else
                 {
-                    GlobalLogManager.Logger.WriteWarn($"Ignore invalid enum value: {item} in Preparing Object Types for ActiveDirectorySearcher");
+                    GlobalLogManager.Logger.Warn($"Ignore invalid enum value: {item} in Preparing Object Types for ActiveDirectorySearcher");
                 }
             }
             return list;

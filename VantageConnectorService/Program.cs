@@ -24,6 +24,7 @@ catch(Exception ex)
 /*
 var exitCode = HostFactory.Run(x =>
 {
+    x.UseNLog(NLogManager.Instance);
     x.Service<VantageService>(s =>
     {
         s.ConstructUsing(heartbeat => new VantageService());

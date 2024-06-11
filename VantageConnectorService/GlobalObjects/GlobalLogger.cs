@@ -1,43 +1,25 @@
-﻿using ActiveDirectorySearcher.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using NLog;
+
 using VantageConnectorService.Helpers;
 
 namespace VantageConnectorService.GlobalObjects
 {
     public class GlobalLogManager
     {
+        public static Logger Logger { get; }
+
+        static GlobalLogManager()
+        {
+            Logger = NLogManager.Instance.GetLogger("VD");
+        }
         public static string FilePath
         {
             get
             {
-                if (_instance == null) throw new Exception(ExceptionMessage());
-                return _instance.FilePath;
+                var basePath = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
+                var filePath = Path.Combine(basePath ?? "", GlobalDefault.LogsFolderName, GlobalDefault.LogFileName);
+                return filePath;
             }
         }
-
-        private static CustomLogger? _instance = null;
-        public static CustomLogger Logger
-        {
-            get
-            {
-                return _instance ?? throw new Exception(ExceptionMessage());
-            }
-        }
-        public static void Initialize(string fileName)
-        {
-            if (_instance != null) //make sure initialize only once
-                return;
-            _instance = new CustomLogger(fileName);
-        }
-
-        private static string ExceptionMessage()
-        {
-            return "Global Logger Manager is not initialized";
-        }
-
     }
 }
