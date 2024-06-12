@@ -42,7 +42,6 @@ namespace CustomActions
         [CustomAction]
         public static ActionResult OpenFileChooser(Session session)
         {
-            System.Diagnostics.Debugger.Launch();
             session.Log("Here is on OpenFileChooser");
 
             try

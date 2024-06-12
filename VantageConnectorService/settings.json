@@ -1,54 +1,114 @@
-﻿[
+[
   {
     "data": {
-      "domainUserName": "administrator",
-      "syncHours": 0,
-      "configFromServer": true,
-      "password": "webdir123R",
-      "domainController": "Active Directory",
-      "syncMinutes": 0,
-      "port": 389,
-      "syncFrequency": "Daily",
-      "domainName": "usman.local",
+      "domainName": null,
+      "domainController": null,
+      "port": 0,
+      "recordsToSyncInSingleRequest": 0,
+      "interval": 0,
+      "configFromServer": false,
+      "domainUserName": null,
+      "password": null,
       "dataType": [
         "user",
         "group",
         "ou"
       ],
-      "settingGettingInterval": 0
+      "selectedOUs": null,
+      "settingGettingInterval": 0,
+      "syncFrequency": null,
+      "syncHours": 0,
+      "syncMinutes": 0,
+      "syncDays": null
     },
-    "name": "SyncSettings",
+    "name": "SyncAllData",
     "uuid": "6c9bb0bd-16dd-4c80-a65f-d845b4e505e1"
   },
   {
     "data": {
+      "domainName": null,
+      "domainController": null,
+      "port": 0,
+      "recordsToSyncInSingleRequest": 0,
+      "interval": 0,
+      "configFromServer": false,
+      "domainUserName": null,
+      "password": null,
       "dataType": [
         "user",
         "group"
-      ]
+      ],
+      "selectedOUs": null,
+      "settingGettingInterval": 0,
+      "syncFrequency": null,
+      "syncHours": 0,
+      "syncMinutes": 0,
+      "syncDays": null
     },
     "name": "SyncData",
-    "uuid": "c723bacb-f0fa-4fdf-a7a4-3789887ccdce"
+    "uuid": "6c9bb0bd-16dd-4c80-a65f-d845b4e505e1"
   },
   {
     "data": {
-      "dataType": [
-        "user",
-        "group",
-        "ou"
-      ]
+      "domainName": null,
+      "domainController": null,
+      "port": 0,
+      "recordsToSyncInSingleRequest": 0,
+      "interval": 0,
+      "configFromServer": false,
+      "domainUserName": null,
+      "password": null,
+      "dataType": null,
+      "selectedOUs": null,
+      "settingGettingInterval": 0,
+      "syncFrequency": null,
+      "syncHours": 0,
+      "syncMinutes": 0,
+      "syncDays": null
     },
-    "name": "SyncAllData",
-    "uuid": "7cd496a8-435a-4f14-937d-c6f9bfac49e8"
-  },
-  {
-    "data": {},
-    "name": "StopAgent",
-    "uuid": "7cd496a8-435a-4f14-937d-c6f9bfac49e8"
-  },
-  {
-    "data": {},
     "name": "UploadADConnectorDebugLogFile",
-    "uuid": "7cd496a8-937d-435a-4f14-c6f9bfac49e8"
+    "uuid": "6c9bb0bd-16dd-4c80-a65f-d845b4e505e1"
+  },
+  {
+    "data": {
+      "domainName": null,
+      "domainController": null,
+      "port": 0,
+      "recordsToSyncInSingleRequest": 0,
+      "interval": 1,
+      "configFromServer": false,
+      "domainUserName": null,
+      "password": null,
+      "dataType": null,
+      "selectedOUs": null,
+      "settingGettingInterval": 0,
+      "syncFrequency": null,
+      "syncHours": 0,
+      "syncMinutes": 0,
+      "syncDays": null
+    },
+    "name": "SettingGettingInterval",
+    "uuid": "bbb17845-8da0-4cb0-925b-4273369f857a"
+  },
+  {
+    "data": {
+      "domainName": null,
+      "domainController": null,
+      "port": 0,
+      "recordsToSyncInSingleRequest": 0,
+      "interval": 0,
+      "configFromServer": false,
+      "domainUserName": null,
+      "password": null,
+      "dataType": null,
+      "selectedOUs": null,
+      "settingGettingInterval": 0,
+      "syncFrequency": null,
+      "syncHours": 0,
+      "syncMinutes": 0,
+      "syncDays": null
+    },
+    "name": "StopAgent",
+    "uuid": "6c9bb0bd-16dd-4c80-a65f-d845b4e505e1"
   }
 ]

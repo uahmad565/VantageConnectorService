@@ -1,42 +1,27 @@
-﻿using ActiveDirectorySearcher.DTOs;
-using Newtonsoft.Json;
-using System.Net.Http.Headers;
+﻿using CommonUtils.GlobalObjects;
 using Topshelf;
 using VantageConnectorService;
-using VantageConnectorService.DTOs;
-using VantageConnectorService.Factory;
-
-try
-{
-    VantageConfig config = VantageConfigFactory.Create();
-
-    ServiceClient service = new ServiceClient(config);
-    Setting[] setting = service.DummySettings();
-    ADSync syncObj = ADSyncFactory.Create(setting[0].data, config);
-    syncObj.OnStart();
-}
-catch(Exception ex)
-{
-    Console.WriteLine(ex.Message);
-}
+using VantageConnectorService.GlobalObjects;
+using VantageConnectorService.Helpers;
 
 
-/*
 var exitCode = HostFactory.Run(x =>
 {
     x.UseNLog(NLogManager.Instance);
     x.Service<VantageService>(s =>
     {
         s.ConstructUsing(heartbeat => new VantageService());
-        s.WhenStarted(Heartbeat => {
+        s.WhenStarted((VantageService Heartbeat,HostControl hostControl )=> {
 
             var isStopped = GlobalFileHandler.ReadJSON<bool>(GlobalFileHandler.UtilityStatus);
             if (isStopped == true)
             {
-                throw new Exception("Failed to start as Stop Agent Already called once");
+                GlobalLogManager.Logger.Debug("Failed to start as Stop Agent Already called once");
+                hostControl.Stop();
+                return true;
             }
-
             Heartbeat.Start();
+            return true;
         });
         s.WhenStopped(Heartbeat => Heartbeat.Stop());
     });
@@ -51,4 +36,3 @@ var exitCode = HostFactory.Run(x =>
 
 int exitCodeValue = (int)Convert.ChangeType(exitCode, exitCode.GetTypeCode());
 Environment.ExitCode = exitCodeValue;
-*/
