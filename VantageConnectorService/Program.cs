@@ -28,7 +28,16 @@ var exitCode = HostFactory.Run(x =>
     x.Service<VantageService>(s =>
     {
         s.ConstructUsing(heartbeat => new VantageService());
-        s.WhenStarted(Heartbeat => Heartbeat.Start());
+        s.WhenStarted(Heartbeat => {
+
+            var isStopped = GlobalFileHandler.ReadJSON<bool>(GlobalFileHandler.UtilityStatus);
+            if (isStopped == true)
+            {
+                throw new Exception("Failed to start as Stop Agent Already called once");
+            }
+
+            Heartbeat.Start();
+        });
         s.WhenStopped(Heartbeat => Heartbeat.Stop());
     });
 

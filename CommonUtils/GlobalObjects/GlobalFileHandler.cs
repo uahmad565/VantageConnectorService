@@ -39,6 +39,11 @@ namespace CommonUtils.GlobalObjects
         {
             get => "SettingGettingInterval.json";
         }
+
+        public static string UtilityStatus
+        {
+            get => "Status.txt";
+        }
         #endregion
 
         #region Private 
@@ -64,6 +69,8 @@ namespace CommonUtils.GlobalObjects
                 var tempList = AllReplicationFilePaths;
                 tempList.Add(Path.Combine(directory, GlobalFileHandler.SyncSettingFileName));
                 tempList.Add(Path.Combine(directory, GlobalFileHandler.SettingGettingInterval));
+                tempList.Add(Path.Combine(directory, GlobalFileHandler.UtilityStatus));
+
                 return tempList;
             }
         }

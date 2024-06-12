@@ -24,12 +24,29 @@ namespace VantageConnectorService
             _vantageConfig = VantageConfigFactory.Create();
             _serviceClient = new ServiceClient(_vantageConfig);
             GlobalFileHandler.Initialize();
+
+            //if ADSync Schedule specified ever then start syncing
+            if (StartNewADSyncIfSyncSettingSpecified())
+                GlobalLogManager.Logger.Info("ADSync Timer started on creating Vantage Service");
+        }
+
+        private bool StartNewADSyncIfSyncSettingSpecified()
+        {
+            var loadedSyncSetting = GlobalFileHandler.ReadJSON<Setting>(GlobalFileHandler.SyncSettingFileName);
+            if (loadedSyncSetting != null)
+            {
+                _aDSync = ADSyncFactory.Create(loadedSyncSetting.data, _vantageConfig);
+                _aDSync.OnStart();
+                return true;
+            }
+            return false;
         }
         public void Start()
         {
+            //get SettingInterval
             var settingInterval = GlobalFileHandler.ReadJSON<double>(GlobalFileHandler.SettingGettingInterval);
             if (settingInterval == default)
-                settingInterval = GlobalDefault.DefaultSettingGettingInterval;//
+                settingInterval = GlobalDefault.DefaultSettingGettingInterval;
             _timer = new System.Timers.Timer(settingInterval * 60 * 1000) { AutoReset = true };
             _timer.Elapsed += TimerElapsed;
             _timer.Start();
@@ -38,8 +55,8 @@ namespace VantageConnectorService
         {
             _aDSync?.OnStop();
             _cancellationToken?.Cancel();
-            _timer.Stop();
-            _timer.Dispose();
+            _timer?.Stop();
+            _timer?.Dispose();
         }
 
         private async void TimerElapsed(object? sender, ElapsedEventArgs e)
@@ -54,11 +71,11 @@ namespace VantageConnectorService
 
                 if (settings.Length == 0)
                 {
-                    GlobalLogManager.Logger.Warn("Timer Elapsed do nothing. Setting Length 0 from getting setting service.");
+                    GlobalLogManager.Logger.Info($"Vantage-Service setting not found");
                     return;
                 }
                 var currentSetting = settings[0];
-                GlobalLogManager.Logger.Info($"Going to fetch Setting for Vantage Service{Environment.NewLine}{await SerializerHelper.GetSerializedObject(currentSetting)}");
+                GlobalLogManager.Logger.Info($"Going to fetch Setting for Vantage Service{Environment.NewLine}{await SerializerHelper.GetSerializedObject(currentSetting, new() { WriteIndented = true })}");
 
                 if ((currentSetting.name == SettingType.SyncData || currentSetting.name == SettingType.SyncAllData || currentSetting.name == SettingType.StopAgent) && _aDSync != null)
                 {
@@ -73,7 +90,7 @@ namespace VantageConnectorService
                             {
                                 _aDSync?.OnStop();
                                 await GlobalFileHandler.WriteJSON<Setting>(currentSetting, GlobalFileHandler.SyncSettingFileName);
-                                _aDSync = ADSyncFactory.Create(currentSetting.data, _vantageConfig, false);
+                                _aDSync = ADSyncFactory.Create(currentSetting.data, _vantageConfig);
                                 _aDSync.OnStart();
                                 break;
                             }
@@ -96,6 +113,7 @@ namespace VantageConnectorService
                             }
                         case SettingType.StopAgent: // Halt All tasks focus here
                             {
+                                await GlobalFileHandler.WriteJSON<bool>(true, GlobalFileHandler.UtilityStatus);
                                 Stop();
                                 break;
                             }
@@ -122,8 +140,7 @@ namespace VantageConnectorService
                 //resume if ADSync stopped for a while
                 if ((currentSetting.name == SettingType.SyncData || currentSetting.name == SettingType.SyncAllData) && _aDSync != null)
                 {
-                    var loadedSyncSetting = GlobalFileHandler.ReadJSON<Setting>(GlobalFileHandler.SyncSettingFileName);
-                    _aDSync = ADSyncFactory.Create(loadedSyncSetting.data, _vantageConfig, false);
+                    StartNewADSyncIfSyncSettingSpecified();
                 }
                 //await _serviceClient.DummyDequeSettings(settings);
             }

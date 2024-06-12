@@ -12,20 +12,22 @@ namespace ActiveDirectorySearcher;
 #pragma warning disable CA1416 //suppress windows warning 
 public class ActiveDirectoryHelper
 {
-    private static Dictionary<string, string> keyValuePairs = new();
 
-    public static void LoadOUReplication()
+    public static Dictionary<string, string> LoadOUReplication()
     {
+        Dictionary<string, string> keyValuePairs = new();
         var filePath = Path.Combine(GlobalFileHandler.InfoDirectory, GlobalFileHandler.OU_UserGroupsReplicationFileName);
 
         string fileJson = File.ReadAllText(filePath);
         if (!string.IsNullOrEmpty(fileJson))
         {
             keyValuePairs = JsonConvert.DeserializeObject<Dictionary<string, string>>(fileJson) ?? new Dictionary<string, string>();
+            return keyValuePairs;
         }
+        return keyValuePairs;
     }
 
-    public static async Task WriteOUReplication()
+    public static async Task WriteOUReplication(Dictionary<string, string> keyValuePairs)
     {
         var filePath = Path.Combine(GlobalFileHandler.InfoDirectory, GlobalFileHandler.OU_UserGroupsReplicationFileName);
         var json = await SerializerHelper.GetSerializedObject(keyValuePairs);
@@ -36,6 +38,7 @@ public class ActiveDirectoryHelper
     {
         if (containers.Count > 0)
         {
+            Dictionary<string, string> keyValuePairs = LoadOUReplication();
             foreach (var container in containers)
             {
                 var currReplicationTime = DateTime.Now.ToUniversalTime().ToString();
@@ -46,6 +49,7 @@ public class ActiveDirectoryHelper
 
                 await ProcessADObjects(inputCreds, progress, objectType, cancellationToken, lastReplicationTime, recordsToSyncInSingleRequest, container);
                 keyValuePairs[$"{container}_{objectType}"] = currReplicationTime;
+                await WriteOUReplication(keyValuePairs);
             }
         }
         else
@@ -160,7 +164,7 @@ public class ActiveDirectoryHelper
         {
             ObjectType.User => string.IsNullOrEmpty(whenChangedFilter) ? $"(objectClass=user)" : $"(&(objectClass=user)(whenChanged>={whenChangedFilter}))",
             ObjectType.Group => string.IsNullOrEmpty(whenChangedFilter) ? "(objectClass=group)" : $"(&(objectClass=group)(whenChanged>={whenChangedFilter}))",
-            ObjectType.OU => "(objectClass=organizationalUnit)",
+            ObjectType.OU => string.IsNullOrEmpty(whenChangedFilter) ? "(objectClass=organizationalUnit)" : $"(&(objectClass=organizationalUnit)(whenChanged>={whenChangedFilter}))",
             _ => ""
         };
 

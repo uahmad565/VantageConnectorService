@@ -35,8 +35,7 @@ namespace VantageConnectorService
 
         }
         public void OnStart()
-        {
-            ActiveDirectoryHelper.LoadOUReplication();
+        {           
             ScheduleTask();
         }
 
@@ -113,8 +112,6 @@ namespace VantageConnectorService
             catch (Exception ex)
             {
                 HandleError(ex);
-                await ActiveDirectoryHelper.WriteOUReplication();
-
             }
             finally
             {
@@ -139,7 +136,7 @@ namespace VantageConnectorService
                 if (_objectTypes.Contains(ObjectType.OU))
                 {
                     GlobalLogManager.Logger.Info("Start Fetching OUs");
-                    await ActiveDirectoryHelper.ProcessADObjects(_inputCreds, progressReporter, ObjectType.OU, _containers, _recordsToSyncInSingleRequest, _cancellationToken.Token);
+                    await ActiveDirectoryHelper.ProcessADObjects(_inputCreds, progressReporter, ObjectType.OU, new List<string>(), _recordsToSyncInSingleRequest, _cancellationToken.Token);
                 }
                 GlobalLogManager.Logger.Info("Finished Replication");
             });

@@ -7,7 +7,7 @@ namespace VantageConnectorService.Factory
 {
     internal class ADSyncFactory
     {
-        public static ADSync Create(SettingData settingData, VantageConfig config, bool ignoreVantageInterval)
+        public static ADSync Create(SettingData settingData, VantageConfig config, bool ignoreVantageInterval = false)
         {
             List<string> oUlist = new List<string>();
             if (!string.IsNullOrEmpty(settingData.selectedOUs))

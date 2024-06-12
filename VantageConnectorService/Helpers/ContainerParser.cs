@@ -16,7 +16,7 @@ namespace VantageConnectorService.Helpers
                 if (text.Equals("all", StringComparison.InvariantCultureIgnoreCase))
                     return new List<string>();
 
-                char delimiter = ',';
+                string delimiter = Environment.NewLine;
                 var substrings = text.Split(delimiter).Where(s => !string.IsNullOrEmpty(s));
                 return substrings.Select(s => s.Trim()).ToArray();
             }
