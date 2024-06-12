@@ -18,10 +18,10 @@
 			<DialogRef Id="MyCustomPropertiesDlg"/>
 
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="5">1</Publish>
-			
+
 			<Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="MyCustomPropertiesDlg" Order="5">1</Publish>
 			<Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="5">1</Publish>
-			
+
 			<Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg" Order="1">1</Publish>
 		</UI>
 
@@ -46,28 +46,32 @@
 				<!-- Copies the App.WindowsService.exe file using the
                      project reference preprocessor variables -->
 				<File Id="App.WindowsService.exe"
-                      Source="C:\TempUsman\VantageConnectorService.exe"
+                      Source="C:\TempUsman\CloneConnectorService\VantageConnectorService\VantageConnectorService\bin\Release\net6.0\publish\win-x64\VantageConnectorService.exe"
                       KeyPath="yes" />
-
+				
+				<File Id="App.VantageConnectorService.nlog"
+									  Source="C:\TempUsman\CloneConnectorService\VantageConnectorService\VantageConnectorService\bin\Release\net6.0\publish\win-x64\VantageConnectorService.nlog"
+									   />
+				
 				<!-- Remove all files from the INSTALLFOLDER on uninstall -->
 				<RemoveFile Id="ALLFILES" Name="*.*" On="both" />
 
 				<!-- Tell WiX to install the Service -->
 				<ServiceInstall Id="ServiceInstaller"
-                                Type="ownProcess"
-                                Name="VantageService"
-                                DisplayName="Vantage Connector"
-                                Description="Sync Active Directory Objects on regular intervals."
-                                Start="auto"
-                                ErrorControl="normal" />
+								Type="ownProcess"
+								Name="VantageService"
+								DisplayName="Vantage Connector"
+								Description="Sync Active Directory Objects on regular intervals."
+								Start="auto"
+								ErrorControl="normal" />
 
 				<!-- Tell WiX to start the Service -->
 				<ServiceControl Id="StartService"
-                                Start="install"
-                                Stop="both"
-                                Remove="uninstall"
-                                Name="VantageService"
-                                Wait="yes" />
+								Start="install"
+								Stop="both"
+								Remove="uninstall"
+								Name="VantageService"
+								Wait="yes" />
 			</Component>
 		</ComponentGroup>
 	</Fragment>

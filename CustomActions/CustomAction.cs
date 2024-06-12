@@ -11,16 +11,6 @@ namespace CustomActions
 {
     public class CustomActions
     {
-        [CustomAction]
-        public static ActionResult SaveUserInput(Session session)
-        {
-            string configPath = session["LUCENEFOLDER"];
-            string appdataPath = "C:\\Users\\Caphyon";
-            if (!System.IO.Directory.Exists(appdataPath + "\\UserData"))
-                System.IO.Directory.CreateDirectory(appdataPath + "\\UserData");
-            System.IO.File.WriteAllText(appdataPath + "\\UserData\\InputInfo.txt", "FilePath: " + configPath);
-            return ActionResult.Success;
-        }
 
         [CustomAction]
         public static ActionResult CopyConfigFileToInstallDir(Session session)
@@ -52,6 +42,9 @@ namespace CustomActions
         [CustomAction]
         public static ActionResult OpenFileChooser(Session session)
         {
+            System.Diagnostics.Debugger.Launch();
+            session.Log("Here is on OpenFileChooser");
+
             try
             {
                 session.Log("Begin OpenFileChooser Custom Action");
@@ -74,10 +67,6 @@ namespace CustomActions
             var fileDialog = new WinForms.OpenFileDialog { Filter = "JSON Files (*.json)|*.json" };
             if (fileDialog.ShowDialog() == WinForms.DialogResult.OK)
             {
-                string appdataPath = "C:\\Users\\Caphyon";
-                if (!System.IO.Directory.Exists(appdataPath + "\\UserData"))
-                    System.IO.Directory.CreateDirectory(appdataPath + "\\UserData");
-                System.IO.File.WriteAllText(appdataPath + "\\UserData\\InputInfo.txt", "FilePath: " + session["INSTALLDIR"] + " ^ " + session["MY_INSTALL_LOCATION"]);
 
                 session["FILEPATH"] = fileDialog.FileName;
             }
