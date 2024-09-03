@@ -111,6 +111,72 @@ public class ActiveDirectoryHelper
 
         }
     }
+    #region Delete Replication 
+    public static async Task ProcessDeleteADObjects(InputCreds inputCreds, IProgress<Status>? progress, ObjectType objectType, int recordsToSyncInSingleRequest, CancellationToken cancellationToken)
+    {
+        string filePath = objectType switch
+        {
+            ObjectType.User => Path.Combine(DeleteReplicationGlobalFileHandler.DeleteInfoDirectory, DeleteReplicationGlobalFileHandler.DeleteUserReplicationFileName),
+            ObjectType.Group => Path.Combine(DeleteReplicationGlobalFileHandler.DeleteInfoDirectory, DeleteReplicationGlobalFileHandler.DeleteGroupReplicationFileName),
+            ObjectType.OU => Path.Combine(DeleteReplicationGlobalFileHandler.DeleteInfoDirectory, DeleteReplicationGlobalFileHandler.DeleteOUReplicationFileName),
+            _ => ""
+        };
+        var currReplicationTime = DateTime.Now.ToUniversalTime().ToString();
+        var lastReplicationTime = await File.ReadAllTextAsync(filePath);
+        await ProcessDeletedObjects(inputCreds, progress, objectType, cancellationToken, lastReplicationTime, recordsToSyncInSingleRequest);
+        await File.WriteAllTextAsync(filePath, currReplicationTime, cancellationToken);
+    }
+
+    private static async Task ProcessDeletedObjects(InputCreds inputCreds, IProgress<Status>? progress, ObjectType objectType, CancellationToken cancellationToken, string? lastReplicationTime, int recordsToSyncInSingleRequest)
+    {
+        progress?.Report(new($"Processing Delete Replication {objectType}. {Environment.NewLine}", ""));
+
+        var whenChangedFilter = string.IsNullOrEmpty(lastReplicationTime) ? "" : DateTime.Parse(lastReplicationTime).ToString("yyyyMMddHHmmss.0Z");
+        using var root = await GetRootEntry(inputCreds, string.Empty);
+
+        using var searcher = new DirectorySearcher(root);
+        searcher.PropertiesToLoad.Add("objectguid");
+        searcher.PropertiesToLoad.Add("distinguishedName");
+        searcher.Tombstone = true;
+        searcher.Filter = PrepareLdapQuery(objectType, whenChangedFilter, searchDeletedObjects: true);
+        searcher.PageSize = 500;
+        searcher.SizeLimit = 0;
+
+        using var results = await Task.Run(() => searcher?.FindAll());
+        var resultsEnumerator = results?.GetEnumerator();
+
+        if (resultsEnumerator != null)
+        {
+            var objectGuidList = new List<(string, string)>();
+
+            int i = 0;
+            for (; resultsEnumerator.MoveNext(); i++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var result = (SearchResult)resultsEnumerator.Current;
+
+                var objectGuid = Convert.ToBase64String((byte[])result.Properties["objectguid"][0]);
+                var distinguishedName = result.Properties["distinguishedName"][0] as string ?? "";
+
+                objectGuidList.Add((objectGuid, distinguishedName));
+
+
+                if ((i + 1) % recordsToSyncInSingleRequest == 0)
+                    ReportFetchDeletedObjects(objectType, objectGuidList, i + 1, progress);
+
+                if ((i + 1) % recordsToSyncInSingleRequest == 0)
+                    await SendObjectListToWebService(inputCreds.Host, inputCreds.DomainId, objectGuidList.Select(x => x.Item1).ToList(), objectType, progress, cancellationToken, "&action=delete");
+            }
+            if (objectGuidList.Count > 0)
+                ReportFetchDeletedObjects(objectType, objectGuidList, i, progress);
+
+            if (objectGuidList.Count > 0)
+                await SendObjectListToWebService(inputCreds.Host, inputCreds.DomainId, objectGuidList.Select(x => x.Item1).ToList(), objectType, progress, cancellationToken, "&action=delete");
+
+
+        }
+    }
+    #endregion
 
     public static async Task<DirectoryEntry> GetRootEntry(InputCreds inputCreds, string ouPath)
     {
@@ -127,16 +193,16 @@ public class ActiveDirectoryHelper
     }
 
     #region Private static helper methods
-    private static async Task SendObjectListToWebService(string host, string domainID, List<SearchResult> objectsList, ObjectType objectType, IProgress<Status>? progress, CancellationToken cancellationToken)
+    private static async Task SendObjectListToWebService<T>(string host, string domainID, List<T> objectsList, ObjectType objectType, IProgress<Status>? progress, CancellationToken cancellationToken, string action = "")
     {
-        progress?.Report(new("", SendingObjectsRequestMessage(objectsList.Count, objectType)));
+        progress?.Report(new("", SendingObjectsRequestMessage(objectsList.Count, objectType, action)));
 
         var json = await SerializerHelper.GetSerializedObject(objectsList);
         string apiUrl = objectType switch
         {
-            ObjectType.User => $"{host}/active-directory/sync-data?domainId={domainID}&type=user",
-            ObjectType.Group => $"{host}/active-directory/sync-data?domainId={domainID}&type=group",
-            ObjectType.OU => $"{host}/active-directory/sync-data?domainId={domainID}&type=ou",
+            ObjectType.User => $"{host}/active-directory/sync-data?domainId={domainID}&type=user{(string.IsNullOrEmpty(action) ? string.Empty : action)}",
+            ObjectType.Group => $"{host}/active-directory/sync-data?domainId={domainID}&type=group{(string.IsNullOrEmpty(action) ? string.Empty : action)}",
+            ObjectType.OU => $"{host}/active-directory/sync-data?domainId={domainID}&type=ou{(string.IsNullOrEmpty(action) ? string.Empty : action)}",
             _ => ""
         };
         using var client = new HttpClient();
@@ -158,34 +224,43 @@ public class ActiveDirectoryHelper
         }
         objectsList.Clear();
     }
-    private static string PrepareLdapQuery(ObjectType objectType, string whenChangedFilter)
+    private static string PrepareLdapQuery(ObjectType objectType, string whenChangedFilter, bool searchDeletedObjects = false)
     {
+        string deletedObjects = $"{(searchDeletedObjects ? "(isDeleted=TRUE)" : string.Empty)}";
         string ldapfilter = objectType switch
         {
-            ObjectType.User => string.IsNullOrEmpty(whenChangedFilter) ? $"(objectClass=user)" : $"(&(objectClass=user)(whenChanged>={whenChangedFilter}))",
-            ObjectType.Group => string.IsNullOrEmpty(whenChangedFilter) ? "(objectClass=group)" : $"(&(objectClass=group)(whenChanged>={whenChangedFilter}))",
-            ObjectType.OU => string.IsNullOrEmpty(whenChangedFilter) ? "(objectClass=organizationalUnit)" : $"(&(objectClass=organizationalUnit)(whenChanged>={whenChangedFilter}))",
+            ObjectType.User => string.IsNullOrEmpty(whenChangedFilter) ? $"(&{deletedObjects}(objectClass=user))" : $"(&{deletedObjects}(objectClass=user)(whenChanged>={whenChangedFilter}))",
+            ObjectType.Group => string.IsNullOrEmpty(whenChangedFilter) ? $"(&{deletedObjects}(objectClass=group))" : $"(&{deletedObjects}(objectClass=group)(whenChanged>={whenChangedFilter}))",
+            ObjectType.OU => string.IsNullOrEmpty(whenChangedFilter) ? $"(&{deletedObjects}(objectClass=organizationalUnit))" : $"(&{deletedObjects}(objectClass=organizationalUnit)(whenChanged>={whenChangedFilter}))",
             _ => ""
         };
 
         return ldapfilter;
     }
+
     private static string FetchObjectsMessage(ObjectType objectType, List<string> list)
     {
         var sb = new StringBuilder();
-        list.ForEach(x => sb.Append($"fetch {objectType} {x}.{Environment.NewLine}"));
+        list.ForEach(x => sb.Append($"fetch {objectType} {x}{Environment.NewLine}"));
         return sb.ToString();
     }
 
-    private static string SendingObjectsRequestMessage(int count, ObjectType objectType)
+    private static string SendingObjectsRequestMessage(int count, ObjectType objectType, string action)
     {
-        return $"Sending ${count} {objectType}s request.{Environment.NewLine}";
+        return $"Sending {(string.IsNullOrEmpty(action) ? action : "sync")} ${count} {objectType}s request.{Environment.NewLine}";
     }
 
     private static void ReportFetchObjects(ObjectType objectType, List<string> dnList, int i, IProgress<Status>? progress)
     {
         progress?.Report(new($"{FetchObjectsMessage(objectType, dnList)} id: {i} {Environment.NewLine}", ""));
         dnList.Clear();
+    }
+
+    private static void ReportFetchDeletedObjects(ObjectType objectType, List<(string, string)> objectGuid, int i, IProgress<Status>? progress)
+    {
+        var sb = new StringBuilder();
+        objectGuid.ForEach(x => sb.Append($"fetch deleted {objectType} objectguid={x.Item1} , dn={x.Item2}{Environment.NewLine}"));
+        progress?.Report(new($"{sb} id: {i} {Environment.NewLine}", ""));
     }
 
     #endregion

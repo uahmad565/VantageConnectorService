@@ -20,6 +20,7 @@ namespace VantageConnectorService.DTOs
     public class SettingData
     {
         public string domainName { get; set; }
+        public int intervalToSyncWithAD { get; set; } //minutes
         public string domainController { get; set; }
         public int port { get; set; }
         public int recordsToSyncInSingleRequest { get; set; }

@@ -47,6 +47,7 @@ namespace VantageConnectorService
             var settingInterval = GlobalFileHandler.ReadJSON<double>(GlobalFileHandler.SettingGettingInterval);
             if (settingInterval == default)
                 settingInterval = GlobalDefault.DefaultSettingGettingInterval;
+            TimerElapsed(null, null);
             _timer = new System.Timers.Timer(settingInterval * 60 * 1000) { AutoReset = true };
             _timer.Elapsed += TimerElapsed;
             _timer.Start();
@@ -59,7 +60,7 @@ namespace VantageConnectorService
             _timer?.Dispose();
         }
 
-        private async void TimerElapsed(object? sender, ElapsedEventArgs e)
+        private async void TimerElapsed(object? sender, ElapsedEventArgs? e)
         {
             if (_isTaskRunning)
                 return;
@@ -74,75 +75,94 @@ namespace VantageConnectorService
                     GlobalLogManager.Logger.Info($"Vantage-Service setting not found");
                     return;
                 }
-                var currentSetting = settings[0];
-                GlobalLogManager.Logger.Info($"Going to fetch Setting for Vantage Service{Environment.NewLine}{await SerializerHelper.GetSerializedObject(currentSetting, new() { WriteIndented = true })}");
-
-                if ((currentSetting.name == SettingType.SyncData || currentSetting.name == SettingType.SyncAllData || currentSetting.name == SettingType.StopAgent) && _aDSync != null)
+                //var currentSetting = settings[0];
+                foreach (var currentSetting in settings)
                 {
-                    _aDSync.OnStop();
-                }
+                    GlobalLogManager.Logger.Info($"Going to fetch Setting for Vantage Service{Environment.NewLine}{await SerializerHelper.GetSerializedObject(currentSetting, new() { WriteIndented = true })}");
 
-                try
-                {
-                    switch (currentSetting.name)
+                    if ((currentSetting.name == SettingType.SyncData || currentSetting.name == SettingType.SyncAllData || currentSetting.name == SettingType.StopAgent) && _aDSync != null)
                     {
-                        case SettingType.SyncSettings:
-                            {
-                                _aDSync?.OnStop();
-                                await GlobalFileHandler.WriteJSON<Setting>(currentSetting, GlobalFileHandler.SyncSettingFileName);
-                                _aDSync = ADSyncFactory.Create(currentSetting.data, _vantageConfig);
-                                _aDSync.OnStart();
-                                break;
-                            }
-                        case SettingType.SyncData:
-                            {
-                                var loadedSyncSetting = GlobalFileHandler.ReadJSON<Setting>(GlobalFileHandler.SyncSettingFileName);
-                                if (loadedSyncSetting == null) throw new Exception($"{GlobalFileHandler.SyncSettingFileName} should have SyncSetting to proceed {currentSetting.name}");
-                                using var immediateADSync = ADSyncFactory.Create(loadedSyncSetting.data, _vantageConfig, true);
-                                await immediateADSync.ProcessObjects();
-                                break;
-                            }
-                        case SettingType.SyncAllData:
-                            {
-                                var loadedSyncSetting = GlobalFileHandler.ReadJSON<Setting>(GlobalFileHandler.SyncSettingFileName);
-                                if (loadedSyncSetting == null) throw new Exception($"{GlobalFileHandler.SyncSettingFileName} should have SyncSetting to proceed {currentSetting.name}");
-                                GlobalFileHandler.EmptyAllReplicationFiles();
-                                using var immediateADSync = ADSyncFactory.Create(loadedSyncSetting.data, _vantageConfig, true);
-                                await immediateADSync.ProcessObjects();
-                                break;
-                            }
-                        case SettingType.StopAgent: // Halt All tasks focus here
-                            {
-                                await GlobalFileHandler.WriteJSON<bool>(true, GlobalFileHandler.UtilityStatus);
-                                Stop();
-                                break;
-                            }
-                        case SettingType.UploadADConnectorDebugLogFile:
-                            {
-                                await UploadADConnectoryLogFile(_vantageConfig.domainId);
-                                break;
-                            }
-                        case SettingType.SettingGettingInterval:
-                            {
-                                await GlobalFileHandler.WriteJSON<double>(currentSetting.data.interval, GlobalFileHandler.SettingGettingInterval);
-                                _timer.Interval = currentSetting.data.interval * 60 * 1000; //convert to minute
-                                break;
-                            }
+                        _aDSync.OnStop();
                     }
-                    await CallbackStatus(new Commanddetail { uuid = currentSetting.uuid, error = CommandDetailType.Success, errorDescription = currentSetting.name.ToString() + " Successful Operation." });
-                }
-                catch (Exception ex)
-                {
-                    await CallbackStatus(new Commanddetail { uuid = currentSetting.uuid, error = CommandDetailType.Failed, errorDescription = currentSetting.name.ToString() + " Failed Operation." });
-                    GlobalLogManager.Logger.Error(ex);
-                }
+                    await CallbackStatus(new Commanddetail { uuid = currentSetting.uuid, error = CommandDetailType.InProgress, errorDescription = currentSetting.name.ToString() + " In Progress." });
+                    try
+                    {
+                        switch (currentSetting.name)
+                        {
+                            case SettingType.SyncSettings:
+                                {
+                                    _aDSync?.OnStop();
+                                    await GlobalFileHandler.WriteJSON<Setting>(currentSetting, GlobalFileHandler.SyncSettingFileName);
+                                    try
+                                    {
+                                        var sendAllObjectsFlag = GlobalFileHandler.ReadJSON<bool>(GlobalFileHandler.FirstTime_SendAllObjects_FlagFileName);
+                                        if (sendAllObjectsFlag == default)
+                                        {
+                                            await GlobalFileHandler.WriteJSON<bool>(true, GlobalFileHandler.FirstTime_SendAllObjects_FlagFileName);
+                                            using var immediateADSync = ADSyncFactory.Create(currentSetting.data, _vantageConfig, true);
+                                            await immediateADSync.ProcessObjects();
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        GlobalLogManager.Logger.Error(ex);
+                                    }
 
-                //resume if ADSync stopped for a while
-                if ((currentSetting.name == SettingType.SyncData || currentSetting.name == SettingType.SyncAllData) && _aDSync != null)
-                {
-                    StartNewADSyncIfSyncSettingSpecified();
+                                    _aDSync = ADSyncFactory.Create(currentSetting.data, _vantageConfig);
+                                    _aDSync.OnStart();
+                                    break;
+                                }
+                            case SettingType.SyncData:
+                                {
+                                    var loadedSyncSetting = GlobalFileHandler.ReadJSON<Setting>(GlobalFileHandler.SyncSettingFileName);
+                                    if (loadedSyncSetting == null) throw new Exception($"{GlobalFileHandler.SyncSettingFileName} should have SyncSetting to proceed {currentSetting.name}");
+                                    using var immediateADSync = ADSyncFactory.Create(loadedSyncSetting.data, _vantageConfig, true);
+                                    await immediateADSync.ProcessObjects();
+                                    break;
+                                }
+                            case SettingType.SyncAllData:
+                                {
+                                    var loadedSyncSetting = GlobalFileHandler.ReadJSON<Setting>(GlobalFileHandler.SyncSettingFileName);
+                                    if (loadedSyncSetting == null) throw new Exception($"{GlobalFileHandler.SyncSettingFileName} should have SyncSetting to proceed {currentSetting.name}");
+                                    GlobalFileHandler.EmptyAllReplicationFiles();
+                                    DeleteReplicationGlobalFileHandler.EmptyAllReplicationFiles();
+                                    using var immediateADSync = ADSyncFactory.Create(loadedSyncSetting.data, _vantageConfig, true);
+                                    await immediateADSync.ProcessObjects();
+                                    break;
+                                }
+                            case SettingType.StopAgent: // Halt All tasks focus here
+                                {
+                                    await GlobalFileHandler.WriteJSON<bool>(true, GlobalFileHandler.UtilityStatus);
+                                    Stop();
+                                    break;
+                                }
+                            case SettingType.UploadADConnectorDebugLogFile:
+                                {
+                                    await UploadADConnectoryLogFile(_vantageConfig.domainId);
+                                    break;
+                                }
+                            case SettingType.SettingGettingInterval:
+                                {
+                                    await GlobalFileHandler.WriteJSON<double>(currentSetting.data.interval, GlobalFileHandler.SettingGettingInterval);
+                                    _timer.Interval = currentSetting.data.interval * 60 * 1000; //convert to minute
+                                    break;
+                                }
+                        }
+                        await CallbackStatus(new Commanddetail { uuid = currentSetting.uuid, error = CommandDetailType.Success, errorDescription = currentSetting.name.ToString() + " Successful Operation." });
+                    }
+                    catch (Exception ex)
+                    {
+                        await CallbackStatus(new Commanddetail { uuid = currentSetting.uuid, error = CommandDetailType.Failed, errorDescription = currentSetting.name.ToString() + " Failed Operation." });
+                        GlobalLogManager.Logger.Error(ex);
+                    }
+
+                    //resume if ADSync stopped for a while
+                    if ((currentSetting.name == SettingType.SyncData || currentSetting.name == SettingType.SyncAllData) && _aDSync != null)
+                    {
+                        StartNewADSyncIfSyncSettingSpecified();
+                    }
+                    //await _serviceClient.DummyDequeSettings(settings);
                 }
-                //await _serviceClient.DummyDequeSettings(settings);
             }
             catch (Exception vantageTickException)
             {

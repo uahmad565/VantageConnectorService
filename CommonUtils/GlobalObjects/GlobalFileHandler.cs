@@ -44,6 +44,11 @@ namespace CommonUtils.GlobalObjects
         {
             get => "Status.txt";
         }
+
+        public static string FirstTime_SendAllObjects_FlagFileName
+        {
+            get => "FirstTime_SendAllObjects_Flag.txt";
+        }
         #endregion
 
         #region Private 
@@ -70,6 +75,7 @@ namespace CommonUtils.GlobalObjects
                 tempList.Add(Path.Combine(directory, GlobalFileHandler.SyncSettingFileName));
                 tempList.Add(Path.Combine(directory, GlobalFileHandler.SettingGettingInterval));
                 tempList.Add(Path.Combine(directory, GlobalFileHandler.UtilityStatus));
+                tempList.Add(Path.Combine(directory, GlobalFileHandler.FirstTime_SendAllObjects_FlagFileName));
 
                 return tempList;
             }

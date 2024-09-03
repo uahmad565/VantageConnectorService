@@ -9,6 +9,7 @@
 //using Newtonsoft.Json;
 //using System.Net.Http.Headers;
 //using ActiveDirectorySearcher.DTOs;
+//using CommonUtils.GlobalObjects;
 
 //namespace VantageConnectorService.TestCases
 //{
@@ -34,11 +35,10 @@
 //            GlobalFileHandler.Initialize();
 
 //            VantageConfig config = VantageConfigFactory.Create();
-//            GlobalLogManager.Initialize($"{config.domainId}_ADControllerDebugLog_{DateTime.Now.ToString("yyyyMMddHHmmss")}");
 //            config.host = @"https://ns-server.vantagemdm.com";
 //            ServiceClient service = new ServiceClient(config);
 //            Setting[] setting = service.DummySettings();
-//            ADSync syncObj = ADSyncFactory.Create(setting[0].data, config, false);
+//            ADSync syncObj = ADSyncFactory.Create(setting[0].data, config, true);
 //            syncObj.Tick();
 //            //service.DummyDequeSettings(setting);
 //            await Task.Delay(1000 * 60 * 60);

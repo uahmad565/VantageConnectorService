@@ -30,7 +30,7 @@
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFiles64Folder">
-				<Directory Id="MY_INSTALL_LOCATION" Name="Vantage Connector" />
+				<Directory Id="MY_INSTALL_LOCATION" Name="VantageADConnector" />
 			</Directory>
 		</Directory>
 	</Fragment>
@@ -40,7 +40,7 @@
 			<!--<Component Id="myapplicationExe" Guid="*">
 				<File  Source="C:\Users\administrator\source\repos\VantageConnectorService\VantageConnectorService\bin\Debug\net6.0\VantageConnectorService.dll" KeyPath="yes" Checksum="yes"/>
 			</Component>-->
-
+						
 			<Component Id="ServiceExecutable" Win64="yes">
 
 				<!-- Copies the App.WindowsService.exe file using the
@@ -48,14 +48,14 @@
 				<File Id="App.WindowsService.exe"
                       Source="C:\TempUsman\CloneConnectorService\VantageConnectorService\VantageConnectorService\bin\Release\net6.0\publish\win-x64\VantageConnectorService.exe"
                       KeyPath="yes" />
-				
+
 				<File Id="App.VantageConnectorService.nlog"
 									  Source="C:\TempUsman\CloneConnectorService\VantageConnectorService\VantageConnectorService\bin\Release\net6.0\publish\win-x64\VantageConnectorService.nlog"
 									   />
-				
+
 				<!-- Remove all files from the INSTALLFOLDER on uninstall -->
 				<RemoveFile Id="ALLFILES" Name="*.*" On="both" />
-
+	
 				<!-- Tell WiX to install the Service -->
 				<ServiceInstall Id="ServiceInstaller"
 								Type="ownProcess"

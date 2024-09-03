@@ -12,5 +12,6 @@ namespace VantageConnectorService.DTOs
         public int SyncHour { get; set; }
         public int SyncMinute { get; set; }
         public List<DayOfWeek> DaysOfWeek { get; set; }
+        public int IntervalToSyncWithAD { get; set; } //minutes
     }
 }
