@@ -5,7 +5,8 @@
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64"/>
 
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-		<MediaTemplate />
+		<!-- Embed the cabinet file inside the MSI -->
+		<Media Id="1" Cabinet="media1.cab" EmbedCab="yes"/>
 		<!--MyProperties-->
 		<Property Id="WIXUI_INSTALLDIR" Value="MY_INSTALL_LOCATION" />
 		<Property Id="FILEPATH" Value="C:\"/>
@@ -18,10 +19,10 @@
 			<DialogRef Id="MyCustomPropertiesDlg"/>
 
 			<Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="5">1</Publish>
-			
+
 			<Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="MyCustomPropertiesDlg" Order="5">1</Publish>
 			<Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="5">1</Publish>
-			
+
 			<Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg" Order="1">1</Publish>
 		</UI>
 
@@ -30,7 +31,7 @@
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFiles64Folder">
-				<Directory Id="MY_INSTALL_LOCATION" Name="Vantage Connector" />
+				<Directory Id="MY_INSTALL_LOCATION" Name="VantageADConnector" />
 			</Directory>
 		</Directory>
 	</Fragment>
@@ -40,34 +41,38 @@
 			<!--<Component Id="myapplicationExe" Guid="*">
 				<File  Source="C:\Users\administrator\source\repos\VantageConnectorService\VantageConnectorService\bin\Debug\net6.0\VantageConnectorService.dll" KeyPath="yes" Checksum="yes"/>
 			</Component>-->
-
+						
 			<Component Id="ServiceExecutable" Win64="yes">
 
 				<!-- Copies the App.WindowsService.exe file using the
                      project reference preprocessor variables -->
 				<File Id="App.WindowsService.exe"
-                      Source="C:\TempUsman\VantageConnectorService.exe"
+                      Source="C:\TempUsman\CloneConnectorService\VantageConnectorService\VantageConnectorService\bin\Release\net6.0\publish\win-x64\VantageConnectorService.exe"
                       KeyPath="yes" />
+
+				<File Id="App.VantageConnectorService.nlog"
+									  Source="C:\TempUsman\CloneConnectorService\VantageConnectorService\VantageConnectorService\bin\Release\net6.0\publish\win-x64\VantageConnectorService.nlog"
+									   />
 
 				<!-- Remove all files from the INSTALLFOLDER on uninstall -->
 				<RemoveFile Id="ALLFILES" Name="*.*" On="both" />
-
+	
 				<!-- Tell WiX to install the Service -->
 				<ServiceInstall Id="ServiceInstaller"
-                                Type="ownProcess"
-                                Name="VantageService"
-                                DisplayName="Vantage Connector"
-                                Description="Sync Active Directory Objects on regular intervals."
-                                Start="auto"
-                                ErrorControl="normal" />
+								Type="ownProcess"
+								Name="VantageService"
+								DisplayName="Vantage Connector"
+								Description="Sync Active Directory Objects on regular intervals."
+								Start="auto"
+								ErrorControl="normal" />
 
 				<!-- Tell WiX to start the Service -->
 				<ServiceControl Id="StartService"
-                                Start="install"
-                                Stop="both"
-                                Remove="uninstall"
-                                Name="VantageService"
-                                Wait="yes" />
+								Start="install"
+								Stop="both"
+								Remove="uninstall"
+								Name="VantageService"
+								Wait="yes" />
 			</Component>
 		</ComponentGroup>
 	</Fragment>
