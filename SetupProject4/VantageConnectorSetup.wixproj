@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>c4532ced-fdc9-446a-8bdf-729df3cd0229</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>SetupProject4</OutputName>
+    <OutputName>VantageADConnector</OutputName>
     <OutputType>Package</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">

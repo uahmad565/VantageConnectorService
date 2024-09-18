@@ -5,7 +5,8 @@
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64"/>
 
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-		<MediaTemplate />
+		<!-- Embed the cabinet file inside the MSI -->
+		<Media Id="1" Cabinet="media1.cab" EmbedCab="yes"/>
 		<!--MyProperties-->
 		<Property Id="WIXUI_INSTALLDIR" Value="MY_INSTALL_LOCATION" />
 		<Property Id="FILEPATH" Value="C:\"/>
