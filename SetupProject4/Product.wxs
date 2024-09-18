@@ -47,11 +47,11 @@
 				<!-- Copies the App.WindowsService.exe file using the
                      project reference preprocessor variables -->
 				<File Id="App.WindowsService.exe"
-                      Source="C:\TempUsman\CloneConnectorService\VantageConnectorService\VantageConnectorService\bin\Release\net6.0\publish\win-x64\VantageConnectorService.exe"
+                      Source="..\VantageConnectorService\bin\Release\net6.0\publish\win-x64\VantageConnectorService.exe"
                       KeyPath="yes" />
 
 				<File Id="App.VantageConnectorService.nlog"
-									  Source="C:\TempUsman\CloneConnectorService\VantageConnectorService\VantageConnectorService\bin\Release\net6.0\publish\win-x64\VantageConnectorService.nlog"
+									  Source="..\VantageConnectorService\bin\Release\net6.0\publish\win-x64\VantageConnectorService.nlog"
 									   />
 
 				<!-- Remove all files from the INSTALLFOLDER on uninstall -->
